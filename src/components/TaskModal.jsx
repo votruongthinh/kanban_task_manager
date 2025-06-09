@@ -9,7 +9,6 @@ export default function TaskModal({
   defaultStatus,
   tasks,
   currentBoard,
-  users,
 }) {
   const [task, setTask] = useState({
     id: "",
@@ -299,17 +298,6 @@ export default function TaskModal({
                   >
                     SubTasks
                   </button>
-                  <button
-                    type="button"
-                    className={`py-2 px-4 text-sm font-medium ${
-                      activeTab === "users"
-                        ? "text-purple-600 border-b-2 border-purple-600"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
-                    onClick={() => setActiveTab("users")}
-                  >
-                    Member in Charge
-                  </button>
                 </div>
 
                 {/* Subtasks Tab */}
@@ -513,50 +501,6 @@ export default function TaskModal({
                       </option>
                     ))}
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">
-                    Selected Member
-                  </label>
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-md p-2 bg-gray-50 dark:bg-gray-800 min-h-12 max-h-24 overflow-y-auto">
-                    {task.assignedUsers.length === 0 ? (
-                      <div className="text-gray-500 dark:text-gray-400 text-xs text-center py-1">
-                        No members have been selected yet.
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        {task.assignedUsers.map((email) => (
-                          <div
-                            key={email}
-                            className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded text-xs flex items-center"
-                          >
-                            <span className="truncate max-w-28">{email}</span>
-                            <button
-                              type="button"
-                              onClick={() => toggleUserAssignment(email)}
-                              className="ml-1 text-purple-400 hover:text-purple-600 dark:hover:text-purple-200"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="12"
-                                height="12"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>

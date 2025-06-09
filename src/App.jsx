@@ -4,10 +4,8 @@ import Header from "./components/Header";
 import Board from "./components/Board";
 import TaskModal from "./components/TaskModal";
 import DeleteTaskModal from "./components/DeleteTaskModal";
-import SubtaskCompletionModal from "./components/SubtaskCompletionModal";
-import UserList from "./components/UserList";
-import AddUserModal from "./components/AddUserModal";
-import DeleteUserModal from "./components/DeleteUserModal";
+import SubtaskCompletionModal from "./components/SubtaskModal";
+
 import { useTheme } from "./hooks/useTheme";
 import { useBoard } from "./hooks/useBoard";
 
@@ -44,10 +42,6 @@ export default function App() {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isSubtaskModalOpen, setIsSubtaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-  const [showUserList, setShowUserList] = useState(false);
-  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
-  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
     setBoards(initialBoards);
@@ -142,14 +136,6 @@ export default function App() {
     setSelectedTask(null);
   };
 
-  const handleViewTeam = () => {
-    setShowUserList(true);
-  };
-
-  const handleBackToBoard = () => {
-    setShowUserList(false);
-  };
-
   const currentBoardName =
     boards.find((b) => b.id === currentBoard)?.name || "";
 
@@ -189,20 +175,10 @@ export default function App() {
             {boards.length === 0 ? (
               <div className="text-center text-gray-600 dark:text-gray-300">
                 <p className="text-lg mb-4">
-                  Chưa có bảng nào. Vui lòng tạo một bảng mới từ thanh bên.
+                  There is no table yet. Please create a new one from the
+                  sidebar.
                 </p>
               </div>
-            ) : showUserList ? (
-              <UserList
-                users={users}
-                onBack={handleBackToBoard}
-                onAddUser={addUserToBoard}
-                onRemoveUser={removeUserFromBoard}
-                getUserTaskCount={getUserTaskCount}
-                setIsDeleteUserModalOpen={setIsDeleteUserModalOpen}
-                setUserToDelete={setUserToDelete}
-                setIsAddUserModalOpen={setIsAddUserModalOpen}
-              />
             ) : (
               <div className="inline-flex space-x-6 min-w-max">
                 <Board
@@ -219,18 +195,12 @@ export default function App() {
                   updateTask={updateTask}
                   onEditTask={handleEditTask}
                   onOpenSubtaskModal={handleOpenSubtaskModal}
-                  users={users}
-                  addUserToBoard={addUserToBoard}
-                  removeUserFromBoard={removeUserFromBoard}
-                  getUserTaskCount={getUserTaskCount}
-                  onViewTeam={handleViewTeam}
                 />
               </div>
             )}
           </main>
         </div>
       </div>
-
       {isTaskModalOpen && (
         <TaskModal
           isOpen={isTaskModalOpen}
@@ -264,33 +234,6 @@ export default function App() {
           task={selectedTask}
           onUpdate={updateTask}
           columns={columns}
-        />
-      )}
-
-      {isAddUserModalOpen && (
-        <AddUserModal
-          isOpen={isAddUserModalOpen}
-          onClose={() => setIsAddUserModalOpen(false)}
-          onAddUser={addUserToBoard}
-        />
-      )}
-
-      {isDeleteUserModalOpen && (
-        <DeleteUserModal
-          isOpen={isDeleteUserModalOpen}
-          onClose={() => {
-            setIsDeleteUserModalOpen(false);
-            setUserToDelete(null);
-          }}
-          onDelete={() => {
-            if (userToDelete) {
-              removeUserFromBoard(userToDelete.email);
-              setIsDeleteUserModalOpen(false);
-              setUserToDelete(null);
-            }
-          }}
-          userEmail={userToDelete?.email || ""}
-          taskCount={userToDelete?.taskCount || 0}
         />
       )}
     </div>

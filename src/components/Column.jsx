@@ -13,11 +13,9 @@ export default function Column({
   tasks,
   openTaskModal,
   setEditingTask,
-  updateColumn,
   columns,
   isOverlay,
   onDeleteTask,
-  onDeleteColumn,
   updateTask,
   onEditTask,
   onOpenSubtaskModal,
@@ -261,39 +259,12 @@ export default function Column({
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
               aria-label="Open column menu"
-            >
-              <svg
-                className="w-5 h-5 text-gray-500 dark:text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 5v.01M12 12v.01M12 19v.01"
-                />
-              </svg>
-            </button>
+            ></button>
             {isMenuOpen && (
               <div
                 ref={menuRef}
                 className="absolute right-0 mt-2 w-20 bg-white dark:bg-gray-800 rounded shadow-lg z-10"
-              >
-                <button
-                  onClick={handleDeleteColumn}
-                  disabled={isLastColumn}
-                  className={`w-full text-left px-3 py-1 text-sm rounded group relative ${
-                    isLastColumn
-                      ? "text-gray-400 dark:text-gray-500 opacity-50 cursor-not-allowed"
-                      : "text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
-                  aria-label="Delete column"
-                >
-                  Delete
-                </button>
-              </div>
+              ></div>
             )}
           </div>
         </div>
