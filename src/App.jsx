@@ -24,13 +24,6 @@ export default function App() {
     updateTask,
     deleteTask,
     moveTask,
-    addColumn,
-    updateColumn,
-    deleteColumn,
-    users,
-    addUserToBoard,
-    removeUserFromBoard,
-    getUserTaskCount,
   } = useBoard();
 
   const [boards, setBoards] = useState(initialBoards);
@@ -150,6 +143,7 @@ export default function App() {
         addBoard={addBoard}
         updateBoard={updateBoard}
         onDeleteBoard={handleDeleteBoard}
+        darkMode={darkMode}
       />
 
       <div
@@ -187,11 +181,8 @@ export default function App() {
                   moveTask={moveTask}
                   openTaskModal={openTaskModal}
                   setEditingTask={setEditingTask}
-                  addColumn={addColumn}
-                  updateColumn={updateColumn}
                   currentBoard={currentBoard}
                   onDeleteTask={handleDeleteTask}
-                  deleteColumn={deleteColumn}
                   updateTask={updateTask}
                   onEditTask={handleEditTask}
                   onOpenSubtaskModal={handleOpenSubtaskModal}
@@ -211,7 +202,6 @@ export default function App() {
           defaultStatus={newTaskColumnId}
           tasks={tasks}
           currentBoard={currentBoard}
-          users={users}
         />
       )}
 

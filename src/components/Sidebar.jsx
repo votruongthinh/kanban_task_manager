@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import DeleteBoardModal from "./DeleteBoardModal";
+import { FaEllipsisV, FaTimes } from "react-icons/fa"; // Sử dụng FaTimes đã import
 
 export default function Sidebar({
   sidebarOpen,
@@ -10,6 +11,7 @@ export default function Sidebar({
   addBoard,
   updateBoard,
   onDeleteBoard,
+  darkMode,
 }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [boardToDelete, setBoardToDelete] = useState(null);
@@ -19,7 +21,6 @@ export default function Sidebar({
   const [newBoardName, setNewBoardName] = useState("");
   const [boardToRename, setBoardToRename] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isBoardsExpanded, setIsBoardsExpanded] = useState(true);
   const menuRef = useRef(null);
   const menuButtonRef = useRef(null);
 
@@ -30,15 +31,12 @@ export default function Sidebar({
   };
 
   const handleDeleteConfirm = () => {
-    if (boardToDelete) {
-      onDeleteBoard(boardToDelete.id);
-    }
+    if (boardToDelete) onDeleteBoard(boardToDelete.id);
     setIsDeleteModalOpen(false);
   };
 
-  const toggleMenu = (boardId) => {
+  const toggleMenu = (boardId) =>
     setIsMenuOpen(isMenuOpen === boardId ? null : boardId);
-  };
 
   const handleRenameClick = (board) => {
     setBoardToRename(board);
@@ -54,8 +52,7 @@ export default function Sidebar({
     }
     if (
       boards.some(
-        (board) =>
-          board.name.toLowerCase() === newBoardName.trim().toLowerCase()
+        (b) => b.name.toLowerCase() === newBoardName.trim().toLowerCase()
       )
     ) {
       setErrorMessage("Tên bảng đã tồn tại");
@@ -78,9 +75,9 @@ export default function Sidebar({
     ) {
       if (
         boards.some(
-          (board) =>
-            board.id !== boardToRename.id &&
-            board.name.toLowerCase() === newBoardName.trim().toLowerCase()
+          (b) =>
+            b.id !== boardToRename.id &&
+            b.name.toLowerCase() === newBoardName.trim().toLowerCase()
         )
       ) {
         setErrorMessage("Tên bảng đã tồn tại");
@@ -105,115 +102,78 @@ export default function Sidebar({
         setIsMenuOpen(null);
       }
     };
-
-    if (isMenuOpen !== null) {
+    if (isMenuOpen !== null)
       document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuOpen]);
 
   return (
     <div
       className={`${
         sidebarOpen ? "w-64" : "w-0"
-      } fixed left-0 top-0 h-screen transition-all duration-300 overflow-hidden bg-gray-900 dark:bg-gray-900 text-white flex flex-col z-50`}
+      } fixed left-0 top-0 h-screen transition-all duration-300 overflow-hidden ${
+        darkMode ? "bg-gray-900 text-white" : "bg-gray-200 text-gray-900"
+      } flex flex-col z-50`}
     >
       <div className="p-4 flex items-center">
-        <span className="ml-2 font-bold text-white">DashBoard</span>
+        <span className="ml-2 font-bold">DashBoard</span>
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto">
-        <div
-          className="flex items-center justify-between mb-4 cursor-pointer"
-          onClick={() => setIsBoardsExpanded(!isBoardsExpanded)}
-        >
-          <span className="text-sm font-medium uppercase text-gray-400">
-            ALL BOARD
-          </span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-gray-400 transition-transform duration-200"
-            style={{
-              transform: isBoardsExpanded ? "rotate(180deg)" : "rotate(0deg)",
-            }}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </div>
-
-        {isBoardsExpanded && (
-          <nav>
-            {boards.map((board) => (
-              <div key={board.id} className="relative mb-1">
-                <div
-                  onClick={() => setCurrentBoard(board.id)}
-                  className={`flex items-center py-2 px-3 rounded cursor-pointer w-full ${
-                    currentBoard === board.id
-                      ? "bg-purple-600"
-                      : "hover:bg-gray-800"
-                  }`}
+        <nav>
+          {boards.map((board) => (
+            <div key={board.id} className="relative mb-1">
+              <div
+                onClick={() => setCurrentBoard(board.id)}
+                className={`flex items-center py-2 px-3 rounded cursor-pointer w-full ${
+                  currentBoard === board.id
+                    ? "bg-purple-600 text-white"
+                    : darkMode
+                    ? "bg-gray-800 text-white hover:bg-gray-700"
+                    : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                }`}
+              >
+                <span className="flex-1">{board.name}</span>
+                <button
+                  ref={menuButtonRef}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMenu(board.id);
+                  }}
+                  className="ml-2 p-1 rounded hover:bg-gray-700 dark:hover:bg-gray-600"
                 >
-                  <span className="flex-1">{board.name}</span>
+                  <FaEllipsisV className="w-4 h-4 text-gray-400 dark:text-gray-300 hover:text-white" />
+                </button>
+              </div>
+              {isMenuOpen === board.id && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 mt-1 w-24 bg-gray-800 dark:bg-gray-700 rounded shadow-lg z-10"
+                >
                   <button
-                    ref={menuButtonRef}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMenu(board.id);
-                    }}
-                    className="ml-2 p-1 rounded hover:bg-gray-700"
+                    onClick={() => handleRenameClick(board)}
+                    className="w-full text-left px-3 py-1 text-sm text-blue-400 hover:bg-gray-700 dark:hover:bg-gray-600 rounded"
                   >
-                    <svg
-                      className="w-4 h-4 text-gray-400 hover:text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 5v.01M12 12v.01M12 19v.01"
-                      />
-                    </svg>
+                    Rename
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(board)}
+                    className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-700 dark:hover:bg-gray-600 rounded"
+                  >
+                    Delete
                   </button>
                 </div>
-                {isMenuOpen === board.id && (
-                  <div
-                    ref={menuRef}
-                    className="absolute right-0 mt-1 w-24 bg-gray-800 rounded shadow-lg z-10"
-                  >
-                    <button
-                      onClick={() => handleRenameClick(board)}
-                      className="w-full text-left px-3 py-1 text-sm text-blue-400 hover:bg-gray-700 rounded"
-                    >
-                      Rename
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(board)}
-                      className="w-full text-left px-3 py-1 text-sm text-red-400 hover:bg-gray-700 rounded"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </nav>
-        )}
+              )}
+            </div>
+          ))}
+        </nav>
 
         <button
-          className="w-full mt-4 py-3 flex items-center justify-center rounded bg-purple-600 hover:bg-purple-700 text-white"
+          className={`w-full mt-4 py-3 flex items-center justify-center rounded ${
+            darkMode
+              ? "bg-purple-600 hover:bg-purple-700 text-white"
+              : "bg-purple-600 hover:bg-purple-700 text-white"
+          }`}
           onClick={() => {
             setNewBoardName("");
             setErrorMessage("");
@@ -224,12 +184,17 @@ export default function Sidebar({
         </button>
       </div>
 
-      <div className="p-4 border-t border-gray-800">
+      <div className="p-4 border-t border-gray-800 dark:border-gray-700">
         <button
-          className="w-full mt-4 py-2 flex items-center justify-center rounded hover:bg-gray-700 text-gray-400"
+          className={`w-full mt-4 p-2 flex items-center justify-center rounded ${
+            darkMode
+              ? "bg-gray-800 hover:bg-gray-700 text-gray-300"
+              : "bg-gray-200 hover:bg-gray-300 text-gray-700"
+          }`}
           onClick={toggleSidebar}
         >
-          Hide Sidebar
+          <FaTimes className="w-5 h-5" />{" "}
+          {/* Thay "Hide Sidebar" bằng biểu tượng X */}
         </button>
       </div>
 
@@ -239,7 +204,14 @@ export default function Sidebar({
           onClose={() => setIsDeleteModalOpen(false)}
           onDelete={handleDeleteConfirm}
           boardName={boardToDelete?.name || ""}
-        />
+        >
+          <button
+            onClick={() => setIsDeleteModalOpen(false)}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100"
+          >
+            <FaTimes className="w-5 h-5" />
+          </button>
+        </DeleteBoardModal>
       )}
 
       {isAddBoardModalOpen && (
@@ -257,19 +229,7 @@ export default function Sidebar({
                 }}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <FaTimes className="w-5 h-5" />
               </button>
             </div>
             <div className="mb-4">
@@ -280,7 +240,7 @@ export default function Sidebar({
                   setNewBoardName(e.target.value);
                   setErrorMessage("");
                 }}
-                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-white"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
                 placeholder="Enter board name..."
                 autoFocus
               />
@@ -326,19 +286,7 @@ export default function Sidebar({
                 }}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <FaTimes className="w-5 h-5" />
               </button>
             </div>
             <div className="mb-4">
@@ -349,7 +297,7 @@ export default function Sidebar({
                   setNewBoardName(e.target.value);
                   setErrorMessage("");
                 }}
-                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white text-gray-800 dark:bg-gray-700 dark:text-white"
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
                 placeholder="Enter new board name..."
                 autoFocus
               />
@@ -382,4 +330,3 @@ export default function Sidebar({
     </div>
   );
 }
-//

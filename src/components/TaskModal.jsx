@@ -10,19 +10,42 @@ export default function TaskModal({
   tasks,
   currentBoard,
 }) {
+  // State
   const [task, setTask] = useState({
     id: "",
     title: "",
     description: "",
     status: defaultStatus || columns[0]?.id || "",
     subtasks: [],
-    priority: "Medium",
+    priority: "Trung bình",
     assignedUsers: [],
     deadline: null,
   });
   const [errorMessage, setErrorMessage] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
   const [isPriorityDropdownOpen, setIsPriorityDropdownOpen] = useState(false);
+
+  // Effects
+  useEffect(() => {
+    if (editingTask) {
+      setTask({
+        ...editingTask,
+        priority: ["Cao", "Trung bình", "Thấp"].includes(editingTask.priority)
+          ? editingTask.priority
+          : "Trung bình",
+      });
+    } else {
+      setTask({
+        id: `task-${Date.now()}`,
+        title: "",
+        description: "",
+        status: defaultStatus || columns[0]?.id || "",
+        subtasks: [],
+        priority: "Trung bình",
+        assignedUsers: [],
+        deadline: null,
+      });
+    }
+  }, [editingTask, isOpen, columns, defaultStatus]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -33,28 +56,11 @@ export default function TaskModal({
         setIsPriorityDropdownOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isPriorityDropdownOpen]);
 
-  useEffect(() => {
-    if (editingTask) {
-      setTask(editingTask);
-    } else {
-      setTask({
-        id: `task-${Date.now()}`,
-        title: "",
-        description: "",
-        status: defaultStatus || columns[0]?.id || "",
-        subtasks: [],
-        priority: "Medium",
-        assignedUsers: [],
-        deadline: null,
-      });
-    }
-  }, [editingTask, isOpen, columns, defaultStatus]);
-
+  // Handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setTask((prev) => ({ ...prev, [name]: value }));
@@ -78,36 +84,20 @@ export default function TaskModal({
   };
 
   const removeSubtask = (index) => {
-    const newSubtasks = [...task.subtasks];
-    newSubtasks.splice(index, 1);
+    const newSubtasks = task.subtasks.filter((_, i) => i !== index);
     setTask((prev) => ({ ...prev, subtasks: newSubtasks }));
-  };
-
-  const toggleUserAssignment = (email) => {
-    setTask((prev) => {
-      if (prev.assignedUsers.includes(email)) {
-        return {
-          ...prev,
-          assignedUsers: prev.assignedUsers.filter((u) => u !== email),
-        };
-      } else {
-        return { ...prev, assignedUsers: [...prev.assignedUsers, email] };
-      }
-    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (columns.length === 0) {
-      setErrorMessage("Please create at least one column before adding tasks.");
+      setErrorMessage("Vui lòng tạo ít nhất một cột trước khi thêm công việc.");
       return;
     }
-
     if (!task.title.trim()) {
-      setErrorMessage("Title cannot be blank");
+      setErrorMessage("Tiêu đề không được để trống");
       return;
     }
-
     const isDuplicateTitle = tasks.some(
       (t) =>
         t.boardId === currentBoard &&
@@ -115,38 +105,29 @@ export default function TaskModal({
         t.id !== (editingTask?.id || "")
     );
     if (isDuplicateTitle) {
-      setErrorMessage("Task title already exists");
+      setErrorMessage("Tiêu đề công việc đã tồn tại");
       return;
     }
-
-    // Validate deadline (cannot be in the past)
     if (task.deadline) {
       const deadlineDate = new Date(task.deadline);
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to start of day for comparison
+      today.setHours(0, 0, 0, 0);
       if (deadlineDate < today) {
-        setErrorMessage("The completion time cannot be a date in the past.");
+        setErrorMessage("Thời hạn không được là ngày trong quá khứ.");
         return;
       }
     }
-
     onSave(task);
     onClose();
   };
 
-  // Priority options with Vietnamese labels
+  // UI Constants
   const priorityOptions = [
-    { value: "Highest", label: "Highest" },
-    { value: "High", label: "High" },
-    { value: "Medium", label: "Medium" },
-    { value: "Low", label: "Low" },
-    { value: "Lowest", label: "Lowest" },
+    { value: "Cao", label: "Cao", color: "text-red-500" },
+    { value: "Trung bình", label: "Trung bình", color: "text-orange-500" },
+    { value: "Thấp", label: "Thấp", color: "text-blue-500" },
   ];
 
-  const getPriorityLabel = (value) => {
-    const option = priorityOptions.find((opt) => opt.value === value);
-    return option ? option.label : value;
-  };
   const PriorityIcon = ({ priority, className = "" }) => {
     const iconProps = {
       width: "16",
@@ -157,72 +138,63 @@ export default function TaskModal({
       strokeWidth: "2",
       strokeLinecap: "round",
       strokeLinejoin: "round",
-      className: className,
+      className,
     };
+    const option = priorityOptions.find((opt) => opt.value === priority);
+    const colorClass = option?.color || "text-gray-400";
 
     switch (priority) {
-      case "Highest":
+      case "Cao":
         return (
-          <svg {...iconProps} className={`text-red-600 ${className}`}>
-            <path d="M7 17L17 7" />
-            <path d="M7 7h10v10" />
-          </svg>
-        );
-      case "High":
-        return (
-          <svg {...iconProps} className={`text-red-500 ${className}`}>
+          <svg {...iconProps} className={`${colorClass} ${className}`}>
             <path d="M12 19V5" />
             <path d="M5 12l7-7 7 7" />
+            <path d="M12 5l3-3 3 3" />
           </svg>
         );
-      case "Medium":
+      case "Trung bình":
         return (
-          <svg {...iconProps} className={`text-orange-500 ${className}`}>
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <path d="M9 9h6v6H9z" />
+          <svg {...iconProps} className={`${colorClass} ${className}`}>
+            <path d="M4 8h16" />
+            <path d="M4 12h16" />
+            <path d="M4 16h16" />
           </svg>
         );
-      case "Low":
+      case "Thấp":
         return (
-          <svg {...iconProps} className={`text-blue-500 ${className}`}>
+          <svg {...iconProps} className={`${colorClass} ${className}`}>
             <path d="M12 5v14" />
             <path d="M19 12l-7 7-7-7" />
           </svg>
         );
-      case "Lowest":
-        return (
-          <svg {...iconProps} className={`text-green-500 ${className}`}>
-            <path d="M17 7L7 17" />
-            <path d="M17 17H7V7" />
-          </svg>
-        );
       default:
         return (
-          <svg {...iconProps} className={`text-gray-400 ${className}`}>
+          <svg {...iconProps} className={`${colorClass} ${className}`}>
             <circle cx="12" cy="12" r="1" />
           </svg>
         );
     }
   };
 
+  // Render
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-full max-w-2xl"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-            {editingTask ? "Edit Task" : "Add new task"}
+            {editingTask ? "Chỉnh sửa công việc" : "Thêm công việc mới"}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white transition-colors"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -235,8 +207,8 @@ export default function TaskModal({
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
@@ -244,284 +216,210 @@ export default function TaskModal({
         {columns.length === 0 ? (
           <div className="text-center">
             <p className="text-red-500 mb-4">
-              Please create at least one column before adding tasks.
+              Vui lòng tạo ít nhất một cột trước khi thêm công việc.
             </p>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-600"
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
-              Close
+              Đóng
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-3 gap-4">
-              {/* Left Column */}
-              <div className="col-span-2">
-                <div className="mb-3">
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">
-                    Title
-                  </label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={task.title}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">
-                    Describe
-                  </label>
-                  <textarea
-                    name="description"
-                    value={task.description}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
-                    rows="2"
-                  />
-                </div>
-
-                {/* Tab navigation for Subtasks/Users */}
-                <div className="flex border-b border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    className={`py-2 px-4 text-sm font-medium ${
-                      activeTab === "details"
-                        ? "text-purple-600 border-b-2 border-purple-600"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
-                    onClick={() => setActiveTab("details")}
-                  >
-                    SubTasks
-                  </button>
-                </div>
-
-                {/* Subtasks Tab */}
-                {activeTab === "details" && (
-                  <div className="mt-3 mb-3">
-                    <div className="max-h-24 overflow-y-auto mb-2">
-                      {task.subtasks.length === 0 ? (
-                        <div className="text-gray-500 text-sm text-center py-2">
-                          Click "Add Sub-Task" to create a sub-quest
-                        </div>
-                      ) : (
-                        task.subtasks.map((subtask, index) => (
-                          <div
-                            key={subtask.id}
-                            className="flex mb-2 items-center relative"
-                          >
-                            <input
-                              type="text"
-                              value={subtask.title}
-                              onChange={(e) =>
-                                updateSubtask(index, "title", e.target.value)
-                              }
-                              className="flex-grow p-1.5 pr-8 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm"
-                              placeholder="Tiêu đề nhiệm vụ con"
-                              required
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeSubtask(index)}
-                              className="absolute right-2 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                              aria-label="Remove subtask"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
-                              </svg>
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={addSubtask}
-                      className="mt-1 w-full p-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600 font-medium text-sm"
-                    >
-                      + Add Sub Task
-                    </button>
-                  </div>
-                )}
-
-                {/* Users Tab */}
-                {activeTab === "users" && (
-                  <div className="mt-3 mb-3">
-                    <div className="max-h-24 overflow-y-auto grid grid-cols-2 gap-2">
-                      {users.length === 0 ? (
-                        <div className="text-gray-500 dark:text-gray-400 text-sm col-span-2 text-center py-4">
-                          There are no members in the table yet. Please add
-                          members first.
-                        </div>
-                      ) : (
-                        users.map((user) => (
-                          <div
-                            key={user.id}
-                            onClick={() => toggleUserAssignment(user.email)}
-                            className={`p-2 rounded-md border text-sm cursor-pointer transition-colors flex items-center justify-between
-                              ${
-                                task.assignedUsers.includes(user.email)
-                                  ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300"
-                                  : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                              }`}
-                          >
-                            <span className="truncate">{user.email}</span>
-                            {task.assignedUsers.includes(user.email) && (
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="text-purple-500"
-                              >
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column */}
-              <div className="col-span-1 space-y-3">
-                <div>
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">
-                    Completion time
-                  </label>
-                  <input
-                    type="date"
-                    name="deadline"
-                    value={task.deadline || ""}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm"
-                    min={new Date().toISOString().split("T")[0]} // Prevent past dates
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">
-                    Priority Level
-                  </label>
-                  <div className="relative priority-dropdown">
-                    <div
-                      onClick={() =>
-                        setIsPriorityDropdownOpen(!isPriorityDropdownOpen)
-                      }
-                      className="w-full p-2 pl-8 pr-8 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm cursor-pointer flex items-center justify-between"
-                    >
-                      <span>{getPriorityLabel(task.priority)}</span>
-                    </div>
-                    <div className="absolute left-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <PriorityIcon priority={task.priority} />
-                    </div>
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <svg
-                        className={`w-4 h-4 text-gray-400 transition-transform ${
-                          isPriorityDropdownOpen ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-
-                    {isPriorityDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-48 overflow-y-auto">
-                        {priorityOptions.map((option) => (
-                          <div
-                            key={option.value}
-                            onClick={() => {
-                              setTask((prev) => ({
-                                ...prev,
-                                priority: option.value,
-                              }));
-                              setIsPriorityDropdownOpen(false);
-                            }}
-                            className={`p-2 pl-8 pr-4 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer flex items-center text-sm relative
-                              ${
-                                task.priority === option.value
-                                  ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                                  : "text-gray-800 dark:text-white"
-                              }`}
-                          >
-                            <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
-                              <PriorityIcon priority={option.value} />
-                            </div>
-                            <span>{option.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-1">
-                    Status
-                  </label>
-                  <select
-                    name="status"
-                    value={task.status}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm"
-                  >
-                    {columns.map((column) => (
-                      <option key={column.id} value={column.id}>
-                        {column.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tiêu đề
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={task.title}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
+                required
+                placeholder="Nhập tiêu đề công việc"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Mô tả
+              </label>
+              <textarea
+                name="description"
+                value={task.description}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500"
+                rows="3"
+                placeholder="Nhập mô tả công việc"
+              />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Thời hạn
+              </label>
+              <input
+                type="date"
+                name="deadline"
+                value={task.deadline || ""}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
+                min={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Mức độ ưu tiên
+              </label>
+              <div className="relative priority-dropdown">
+                <div
+                  onClick={() =>
+                    setIsPriorityDropdownOpen(!isPriorityDropdownOpen)
+                  }
+                  className="w-full p-2 pl-8 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-sm cursor-pointer flex items-center"
+                >
+                  <span>
+                    {priorityOptions.find((opt) => opt.value === task.priority)
+                      ?.label || task.priority}
+                  </span>
+                </div>
+                <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                  <PriorityIcon priority={task.priority} />
+                </div>
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                  <svg
+                    className={`w-4 h-4 text-gray-400 transition-transform ${
+                      isPriorityDropdownOpen ? "rotate-180" : ""
+                    }`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+                {isPriorityDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded shadow-lg z-50 max-h-48 overflow-y-auto">
+                    {priorityOptions.map((option) => (
+                      <div
+                        key={option.value}
+                        onClick={() => {
+                          setTask((prev) => ({
+                            ...prev,
+                            priority: option.value,
+                          }));
+                          setIsPriorityDropdownOpen(false);
+                        }}
+                        className={`p-2 pl-8 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer flex items-center text-sm ${
+                          task.priority === option.value
+                            ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                            : "text-gray-800 dark:text-white"
+                        }`}
+                      >
+                        <div className="absolute left-2 top-1/2 transform -translate-y-1/2">
+                          <PriorityIcon priority={option.value} />
+                        </div>
+                        <span>{option.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Trạng thái
+              </label>
+              <select
+                name="status"
+                value={task.status}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
+              >
+                {columns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             {errorMessage && (
               <p className="text-red-500 text-xs mt-2">{errorMessage}</p>
             )}
-
-            <div className="flex justify-end space-x-3 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Nhiệm vụ con
+              </label>
+              <div className="max-h-32 overflow-y-auto space-y-2 mb-2">
+                {task.subtasks.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-2">
+                    Nhấn "Thêm nhiệm vụ con" để tạo
+                  </p>
+                ) : (
+                  task.subtasks.map((subtask, index) => (
+                    <div key={subtask.id} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={subtask.title}
+                        onChange={(e) =>
+                          updateSubtask(index, "title", e.target.value)
+                        }
+                        className="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Tiêu đề nhiệm vụ con"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSubtask(index)}
+                        className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                        aria-label="Xóa nhiệm vụ con"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={addSubtask}
+                className="w-full p-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+              >
+                + Thêm nhiệm vụ con
+              </button>
+            </div>
+            <div className="flex justify-end gap-3 mt-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-600 text-sm"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
               >
-                {editingTask ? "Save changes" : "Create Task"}
+                {editingTask ? "Lưu thay đổi" : "Tạo công việc"}
               </button>
             </div>
           </form>

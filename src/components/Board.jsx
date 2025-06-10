@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   DndContext,
   rectIntersection,
@@ -198,7 +198,6 @@ export default function Board({
     tasks,
     openTaskModal,
     setEditingTask,
-
     onDeleteTask,
     updateTask,
     onEditTask,
